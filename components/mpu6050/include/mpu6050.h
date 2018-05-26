@@ -24,7 +24,7 @@ struct mpu6050_readings
 	struct dim accel;
 	uint16_t temperature;
 	struct dim gyro;
-	struct dim angle
+	struct dim angle;
 };
 
 xQueueHandle xQueueGyro;

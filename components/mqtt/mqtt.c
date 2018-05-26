@@ -13,6 +13,11 @@
 #include "iothubtransportmqtt.h"
 #include "iothub_client_options.h"
 #include "mqtt.h"
+
+#include "ad8232.h"
+#include "mpu6050.h"
+#include "lm35.h"
+
 #ifdef MBED_BUILD_TIMESTAMP
 #define SET_TRUSTED_CERT_IN_SAMPLES
 #endif // MBED_BUILD_TIMESTAMP
@@ -33,6 +38,8 @@ static bool g_continueRunning;
 #define MESSAGE_COUNT 5
 #define DOWORK_LOOP_NUM     3
 
+#define ECG_DATA_SIZE 20
+#define GYRO_DATA_SIZE 20
 
 typedef struct EVENT_INSTANCE_TAG
 {
@@ -127,6 +134,23 @@ static void SendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, v
 
 void iothub_client_sample_mqtt_run(void)
 {
+	//****************************************8
+	//
+	//Queue Receiveing Code
+	//
+	//******************************************
+	
+	uint32_t * ecgBuff = (uint32_t *)malloc(ECG_DATA_SIZE * sizeof(uint32_t));
+	uint16_t * gyroBuff = (uint16_t *)malloc(ECG_DATA_SIZE * 10 * sizeof(uint16_t));
+	uint32_t temperature = 0;
+	for (uint32_t count = 0; count < ECG_DATA_SIZE; ++count)
+		xQueueReceive(xQueueECG, ecgBuff + 10 * count, 0);
+	xQueueReceive(xQueueTemperature, &temperature, 0);
+	for (uint32_t count = 0; count < GYRO_DATA_SIZE; ++count)
+		xQueueReceive(xQueueGyro, gyroBuff + count, 0);
+
+
+	//*****************************************
     IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle;
 
     EVENT_INSTANCE messages[MESSAGE_COUNT];
