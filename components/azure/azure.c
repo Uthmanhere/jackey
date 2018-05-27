@@ -67,7 +67,6 @@ void azure_task(void *pvParameter)
     ESP_LOGI(TAG, "Connected to access point success");
 
 
-    iothub_client_sample_mqtt_run();
     while(1)
     {
     	vTaskDelay(1000);

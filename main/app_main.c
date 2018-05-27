@@ -13,7 +13,7 @@
 #include "esp_event_loop.h" 
 #include "esp_log.h"
 
-//#include "mpu6050.h"
+#include "mpu6050.h"
 #include "ad8232.h"
 #include "lm35.h"
 #include "nvs_flash.h"
@@ -25,6 +25,10 @@
 void app_main()
 {
 	
-	xTaskCreate(azure_task, "azure_task", 5120, NULL, 5, NULL);
-    xTaskCreate(mqtt_task, "mqtt_task", 5120, NULL, 5, NULL);
+	xTaskCreatePinnedToCore(lm35_read_task, "LM35Read", 1024, NULL, 2, NULL, 0);
+	
+	xTaskCreatePinnedToCore(mpu6050_read_task, "MPU6050Read", 1024, NULL, 2, NULL, 0);
+	xTaskCreatePinnedToCore(ad8232_read_task, "AD8232Read", 4096, NULL, 2, NULL, 1);
+	xTaskCreate(azure_task, "azure_task", 4096, NULL, 5, NULL);
+	xTaskCreate(mqtt_task, "mqtt_task", 10240, NULL, 5, NULL);
 }

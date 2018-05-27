@@ -38,8 +38,8 @@ static bool g_continueRunning;
 #define MESSAGE_COUNT 5
 #define DOWORK_LOOP_NUM     3
 
-#define ECG_DATA_SIZE 20
-#define GYRO_DATA_SIZE 20
+#define ECG_DATA_SIZE	500
+#define GYRO_DATA_SIZE	25 
 
 typedef struct EVENT_INSTANCE_TAG
 {
@@ -139,18 +139,42 @@ void iothub_client_sample_mqtt_run(void)
 	//Queue Receiveing Code
 	//
 	//******************************************
+	while(1)
+	{	
+	vTaskDelay(pdMS_TO_TICKS(5000));
+
+	uint32_t msgBuffer_index = 0;
+	uint32_t receive_data = 0;
+	xQueueReceive(xQueueTemperature, &receive_data, 0);
+	msgBuffer_index = sprintf_s(msgText, sizeof(msgText), "{\"deviceId\",\"myFirstDevice\",\"temerature\":%2d, \"angles\":[", receive_data);
+	printf("Temperature: %d\n", receive_data);
+	for (uint32_t count = 0; count < GYRO_DATA_SIZE - 1; ++count)
+	{
+		xQueueReceive(xQueueGyro, &receive_data, 0);
+		msgBuffer_index += sprintf_s(&msgText, sizeof(&msgText) + 1, "%d, ", receive_data);
+		printf("%d Gyro: %d\n", count, receive_data);
+	}
+	xQueueReceive(xQueueGyro, &receive_data, 0);
+	msgBuffer_index += sprintf_s(&msgText, sizeof(&msgText) + 1, "%d]e ", receive_data);
 	
-	uint32_t * ecgBuff = (uint32_t *)malloc(ECG_DATA_SIZE * sizeof(uint32_t));
-	uint16_t * gyroBuff = (uint16_t *)malloc(ECG_DATA_SIZE * 10 * sizeof(uint16_t));
-	uint32_t temperature = 0;
-	for (uint32_t count = 0; count < ECG_DATA_SIZE; ++count)
-		xQueueReceive(xQueueECG, ecgBuff + 10 * count, 0);
-	xQueueReceive(xQueueTemperature, &temperature, 0);
-	for (uint32_t count = 0; count < GYRO_DATA_SIZE; ++count)
-		xQueueReceive(xQueueGyro, gyroBuff + count, 0);
+	msgBuffer_index += sprintf_s(&msgText, sizeof(&msgText) + 2, "\"ecg\":[");
 
+	for (uint32_t count = 0; count < ECG_DATA_SIZE - 1; ++count)
+	{
+		xQueueReceive(xQueueECG, &receive_data, 0);
+		msgBuffer_index += sprintf_s(&msgText, sizeof(&msgText) + 1, "%d, ", receive_data);
+		printf("%d ECG: %d\n", count, receive_data);
+	}
+	xQueueReceive(xQueueECG, &receive_data, 0);
+	msgBuffer_index += sprintf_s(&msgText, sizeof(&msgText) + 1, "%d]}", receive_data);
+	xQueueReceive(xQueueECG, &receive_data, 0);
 
+	}
+	
 	//*****************************************
+	
+
+	/*
     IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle;
 
     EVENT_INSTANCE messages[MESSAGE_COUNT];
@@ -187,7 +211,6 @@ void iothub_client_sample_mqtt_run(void)
             }
 #endif // SET_TRUSTED_CERT_IN_SAMPLES
 
-            /* Setting Message call back, so we can receive Commands. */
             if (IoTHubClient_LL_SetMessageCallback(iotHubClientHandle, ReceiveMessageCallback, &receiveContext) != IOTHUB_CLIENT_OK)
             {
                 (void)printf("ERROR: IoTHubClient_LL_SetMessageCallback..........FAILED!\r\n");
@@ -196,7 +219,6 @@ void iothub_client_sample_mqtt_run(void)
             {
                 (void)printf("IoTHubClient_LL_SetMessageCallback...successful.\r\n");
 
-                /* Now that we are ready to receive commands, let's send some messages */
                 size_t iterator = 0;
                 double temperature = 0;
                 double humidity = 0;
@@ -256,6 +278,7 @@ void iothub_client_sample_mqtt_run(void)
         }
         platform_deinit();
     }
+	*/
 }
 
 void mqtt_task(void * pvParameter)

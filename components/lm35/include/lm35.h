@@ -12,7 +12,7 @@
 
 #define DEFAULT_VREF	1100
 #define NO_OF_SAMPLES   64          //Multisampling
-
+#define LM35_DELAY_TIME	5000
 
 xQueueHandle xQueueTemperature;
 
