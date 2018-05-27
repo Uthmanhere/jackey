@@ -32,7 +32,7 @@
 static const char* connectionString = "HostName=royspr-m07f130.azure-devices.net;DeviceId=TestDevice01;SharedAccessKey=3s04a6jr99+Oog8KeqG2MnN9igkqu3G+c3JJOLW2tM8=";
 
 static int callbackCounter;
-static char msgText[1024];
+static char msgText[4040];
 static char propText[1024];
 static bool g_continueRunning;
 #define MESSAGE_COUNT 5
@@ -52,7 +52,7 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT ReceiveMessageCallback(IOTHUB_MESSAGE_HA
     int* counter = (int*)userContextCallback;
     const char* buffer;
     size_t size;
-    MAP_HANDLE mapProperties;
+//    MAP_HANDLE mapProperties;
     const char* messageId;
     const char* correlationId;
     const char* userDefinedContentType;
@@ -96,7 +96,7 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT ReceiveMessageCallback(IOTHUB_MESSAGE_HA
     }
 
     // Retrieve properties from the message
-    mapProperties = IoTHubMessage_Properties(message);
+/*    mapProperties = IoTHubMessage_Properties(message);
     if (mapProperties != NULL)
     {
         const char*const* keys;
@@ -117,7 +117,7 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT ReceiveMessageCallback(IOTHUB_MESSAGE_HA
             }
         }
     }
-
+*/
     /* Some device specific action code goes here... */
     (*counter)++;
     return IOTHUBMESSAGE_ACCEPTED;
@@ -147,34 +147,39 @@ void iothub_client_sample_mqtt_run(void)
 	uint32_t receive_data = 0;
 	xQueueReceive(xQueueTemperature, &receive_data, 0);
 	msgBuffer_index = sprintf_s(msgText, sizeof(msgText), "{\"deviceId\",\"myFirstDevice\",\"temerature\":%2d, \"angles\":[", receive_data);
-	printf("Temperature: %d\n", receive_data);
+//	printf("Temperature: %2d\n", receive_data);
 	for (uint32_t count = 0; count < GYRO_DATA_SIZE - 1; ++count)
 	{
 		xQueueReceive(xQueueGyro, &receive_data, 0);
-		msgBuffer_index += sprintf_s(&msgText, sizeof(&msgText) + 1, "%d, ", receive_data);
-		printf("%d Gyro: %d\n", count, receive_data);
+		msgBuffer_index += sprintf_s(&msgText[msgBuffer_index], sizeof(uint32_t) + 3 * sizeof(char), "%4d, ", receive_data);
+		printf("%d %u\n", count, msgBuffer_index);
+//		printf("%d Gyro: %d\n", count, receive_data);
 	}
 	xQueueReceive(xQueueGyro, &receive_data, 0);
-	msgBuffer_index += sprintf_s(&msgText, sizeof(&msgText) + 1, "%d]e ", receive_data);
+	msgBuffer_index += sprintf_s(&msgText[msgBuffer_index], sizeof(uint32_t) + 3 * sizeof(char), "%4d] ", receive_data);
 	
-	msgBuffer_index += sprintf_s(&msgText, sizeof(&msgText) + 2, "\"ecg\":[");
+	msgBuffer_index += sprintf_s(&msgText[msgBuffer_index],  9 * sizeof(char), ",\"ecg\":[");
 
 	for (uint32_t count = 0; count < ECG_DATA_SIZE - 1; ++count)
 	{
 		xQueueReceive(xQueueECG, &receive_data, 0);
-		msgBuffer_index += sprintf_s(&msgText, sizeof(&msgText) + 1, "%d, ", receive_data);
-		printf("%d ECG: %d\n", count, receive_data);
+		msgBuffer_index += sprintf_s(&msgText[msgBuffer_index], sizeof(uint32_t) + 3 * sizeof(char), "%4d, ", receive_data);
+		printf("%d %u\n", count, msgBuffer_index);
+//		printf("%d ECG: %d\n", count, receive_data);
 	}
 	xQueueReceive(xQueueECG, &receive_data, 0);
-	msgBuffer_index += sprintf_s(&msgText, sizeof(&msgText) + 1, "%d]}", receive_data);
+	msgBuffer_index += sprintf_s(&msgText[msgBuffer_index], sizeof(uint32_t) + 5 * sizeof(char), "%4d]}\r\n", receive_data);
 	xQueueReceive(xQueueECG, &receive_data, 0);
-
+		puts("Over here");
+	for (uint32_t count = 0; count < 2048; ++count)	
+		printf("%c", msgText[count]);
+		puts("The here");
 	}
 	
 	//*****************************************
 	
 
-	/*
+	
     IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle;
 
     EVENT_INSTANCE messages[MESSAGE_COUNT];
@@ -218,53 +223,83 @@ void iothub_client_sample_mqtt_run(void)
             else
             {
                 (void)printf("IoTHubClient_LL_SetMessageCallback...successful.\r\n");
-
+				uint32_t msgBuffer_index = 0;
+				uint32_t receive_data = 0;
                 size_t iterator = 0;
-                double temperature = 0;
-                double humidity = 0;
-                do
-                {
-                    if (iterator < MESSAGE_COUNT)
+               // double temperature = 0;
+               // double humidity = 0;
+               while(1) 
+               {
+                        //temperature = minTemperature + (rand() % 10);
+                        //humidity = minHumidity +  (rand() % 20);
+                        //sprintf_s(msgText, sizeof(msgText), "{\"deviceId\":\"myFirstDevice\",\"windSpeed\":%.2f,\"temperature\":%.2f,\"humidity\":%.2f}", avgWindSpeed + (rand() % 4 + 2), temperature, humidity);
+					vTaskDelay(pdMS_TO_TICKS(5000));
+
+
+					xQueueReceive(xQueueTemperature, &receive_data, 0);
+					msgBuffer_index = sprintf_s(msgText, sizeof(msgText), "{\"deviceId\",\"myFirstDevice\",\"temerature\":%2d, \"angles\":[", receive_data);
+					//	printf("Temperature: %2d\n", receive_data);
+					for (uint32_t count = 0; count < GYRO_DATA_SIZE - 1; ++count)
+					{
+						xQueueReceive(xQueueGyro, &receive_data, 0);
+						msgBuffer_index += sprintf_s(&msgText[msgBuffer_index], sizeof(uint32_t) + 3 * sizeof(char), "%4d, ", receive_data);
+						printf("%d %u\n", count, msgBuffer_index);
+						//		printf("%d Gyro: %d\n", count, receive_data);
+					}
+					xQueueReceive(xQueueGyro, &receive_data, 0);
+					msgBuffer_index += sprintf_s(&msgText[msgBuffer_index], sizeof(uint32_t) + 3 * sizeof(char), "%4d] ", receive_data);
+	
+					msgBuffer_index += sprintf_s(&msgText[msgBuffer_index],  9 * sizeof(char), ",\"ecg\":[");
+
+					for (uint32_t count = 0; count < ECG_DATA_SIZE - 1; ++count)
+					{
+						xQueueReceive(xQueueECG, &receive_data, 0);
+						msgBuffer_index += sprintf_s(&msgText[msgBuffer_index], sizeof(uint32_t) + 3 * sizeof(char), "%4d, ", receive_data);
+						printf("%d %u\n", count, msgBuffer_index);
+//							printf("%d ECG: %d\n", count, receive_data);
+					}
+					xQueueReceive(xQueueECG, &receive_data, 0);
+					msgBuffer_index += sprintf_s(&msgText[msgBuffer_index], sizeof(uint32_t) + 5 * sizeof(char), "%4d]}\r\n", receive_data);
+					xQueueReceive(xQueueECG, &receive_data, 0);
+//					puts("Over here");
+//					for (uint32_t count = 0; count < 2048; ++count)	
+//						printf("%c", msgText[count]);
+//						puts("The here");
+	
+					if ((messages[iterator].messageHandle = IoTHubMessage_CreateFromByteArray((const unsigned char*)msgText, strlen(msgText))) == NULL)
                     {
-                        temperature = minTemperature + (rand() % 10);
-                        humidity = minHumidity +  (rand() % 20);
-                        sprintf_s(msgText, sizeof(msgText), "{\"deviceId\":\"myFirstDevice\",\"windSpeed\":%.2f,\"temperature\":%.2f,\"humidity\":%.2f}", avgWindSpeed + (rand() % 4 + 2), temperature, humidity);
-                        if ((messages[iterator].messageHandle = IoTHubMessage_CreateFromByteArray((const unsigned char*)msgText, strlen(msgText))) == NULL)
-                        {
                             (void)printf("ERROR: iotHubMessageHandle is NULL!\r\n");
-                        }
-                        else
-                        {
+                    }
+                    else
+                    {
 
-                            (void)IoTHubMessage_SetMessageId(messages[iterator].messageHandle, "MSG_ID");
-                            (void)IoTHubMessage_SetCorrelationId(messages[iterator].messageHandle, "CORE_ID");
-                            (void)IoTHubMessage_SetContentTypeSystemProperty(messages[iterator].messageHandle, "application%2Fjson");
-                            (void)IoTHubMessage_SetContentEncodingSystemProperty(messages[iterator].messageHandle, "utf-8");
+                        (void)IoTHubMessage_SetMessageId(messages[iterator].messageHandle, "MSG_ID");
+                        (void)IoTHubMessage_SetCorrelationId(messages[iterator].messageHandle, "CORE_ID");
+                        (void)IoTHubMessage_SetContentTypeSystemProperty(messages[iterator].messageHandle, "application%2Fjson");
+                        (void)IoTHubMessage_SetContentEncodingSystemProperty(messages[iterator].messageHandle, "utf-8");
 
-                            messages[iterator].messageTrackingId = iterator;
-                            MAP_HANDLE propMap = IoTHubMessage_Properties(messages[iterator].messageHandle);
+                        messages[iterator].messageTrackingId = iterator;
+/*                          MAP_HANDLE propMap = IoTHubMessage_Properties(messages[iterator].messageHandle);
                             (void)sprintf_s(propText, sizeof(propText), temperature > 28 ? "true" : "false");
                             if (Map_AddOrUpdate(propMap, "temperatureAlert", propText) != MAP_OK)
                             {
                                 (void)printf("ERROR: Map_AddOrUpdate Failed!\r\n");
                             }
-
-                            if (IoTHubClient_LL_SendEventAsync(iotHubClientHandle, messages[iterator].messageHandle, SendConfirmationCallback, &messages[iterator]) != IOTHUB_CLIENT_OK)
-                            {
-                                (void)printf("ERROR: IoTHubClient_LL_SendEventAsync..........FAILED!\r\n");
-                            }
-                            else
-                            {
-                                (void)printf("IoTHubClient_LL_SendEventAsync accepted message [%d] for transmission to IoT Hub.\r\n", (int)iterator);
-                            }
+*/
+					   if (IoTHubClient_LL_SendEventAsync(iotHubClientHandle, messages[iterator].messageHandle, SendConfirmationCallback, &messages[iterator]) != IOTHUB_CLIENT_OK)
+                        {
+                            (void)printf("ERROR: IoTHubClient_LL_SendEventAsync..........FAILED!\r\n");
                         }
-
+                        else
+                        {
+                            (void)printf("IoTHubClient_LL_SendEventAsync accepted message [%d] for transmission to IoT Hub.\r\n", (int)iterator);
+                        }
                     }
-                    IoTHubClient_LL_DoWork(iotHubClientHandle);
-                    ThreadAPI_Sleep(1);
+					IoTHubClient_LL_DoWork(iotHubClientHandle);
+					ThreadAPI_Sleep(1);
 
-                    iterator++;
-                } while (g_continueRunning);
+					iterator++;
+                }
 
                 (void)printf("iothub_client_sample_mqtt has gotten quit message, call DoWork %d more time to complete final sending...\r\n", DOWORK_LOOP_NUM);
                 size_t index = 0;
@@ -278,7 +313,7 @@ void iothub_client_sample_mqtt_run(void)
         }
         platform_deinit();
     }
-	*/
+
 }
 
 void mqtt_task(void * pvParameter)
